@@ -1,0 +1,43 @@
+using System;
+using System.Threading.Tasks;
+using Discord;
+
+namespace Giovanni.Services
+{
+    public static class LogService
+    {
+        public static Task Log(LogMessage message)
+        {
+            switch (message.Severity)
+            {
+                case LogSeverity.Critical:
+                case LogSeverity.Error:
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    break;
+                case LogSeverity.Warning:
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    break;
+                case LogSeverity.Info:
+                    Console.ForegroundColor = ConsoleColor.White;
+                    break;
+                case LogSeverity.Verbose:
+                case LogSeverity.Debug:
+                    Console.ForegroundColor = ConsoleColor.DarkGray;
+                    break;
+            }
+
+            Console.WriteLine(
+                $"{DateTime.Now,-19} [{message.Severity,8}] {message.Source}: {message.Message} {message.Exception}");
+            Console.ResetColor();
+
+            return Task.CompletedTask;
+        }
+
+        public static Task Log(string message)
+        {
+            Console.WriteLine($"{DateTime.Now,-19} {message}");
+
+            return Task.CompletedTask;
+        }
+    }
+}
