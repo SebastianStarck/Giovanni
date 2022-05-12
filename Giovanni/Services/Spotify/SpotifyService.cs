@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Giovanni.Models;
 using Giovanni.Models.Spotify;
+using Giovanni.Models.Spotify.DataSource;
 using Microsoft.Extensions.Caching.Memory;
 using Newtonsoft.Json;
 
@@ -11,24 +12,25 @@ namespace Giovanni.Services.Spotify
     public partial class SpotifyService
     {
         private readonly HttpService _httpService;
-        private readonly IMemoryCache _memoryCache;
+        private readonly CacheService CacheService = new();
 
-        public SpotifyService(IMemoryCache memoryCache)
+        public SpotifyService()
         {
-            _memoryCache = memoryCache;
             _httpService = new HttpService("https://api.spotify.com/v1/", GetToken);
         }
 
-        public async Task<Artist> GetArtistByID(string id)
+        public Task<ArtistDataSource> GetArtistByID(string id)
         {
-            var request = await _httpService
-                .Get($"artists/{id}");
-            var response = await request.Content.ReadAsStringAsync();
-            var artist = JsonConvert.DeserializeObject<Artist>(response);
+            return CacheService.GetOrCreateAsync(id, async () =>
+                {
+                    var request = await _httpService
+                        .Get($"artists/{id}");
+                    var response = await request.Content.ReadAsStringAsync();
+                    var artist = JsonConvert.DeserializeObject<ArtistDataSource>(response);
 
-            _memoryCache.Set(id, artist, TimeSpan.FromDays(1));
-
-            return artist;
+                    return artist;
+                }
+            );
         }
 
         public async Task<Playlist?> GetPlaylistByID(string id)
@@ -37,7 +39,7 @@ namespace Giovanni.Services.Spotify
             var request = await _httpService.Get($"playlists/{id}", parameters);
             var response = await request.Content.ReadAsStringAsync();
 
-            return JsonConvert.DeserializeObject<Playlist>(response);
+            return new Playlist(this, JsonConvert.DeserializeObject<PlaylistDataSource>(response));
         }
 
         public async Task<Paginated<PlaylistItem>?> GetPlaylistTracks(string id)

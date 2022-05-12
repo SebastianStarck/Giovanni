@@ -1,5 +1,7 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
+using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 
@@ -18,23 +20,23 @@ public class CommandHandler
 
     public async Task HandleCommandAsync(SocketMessage arg)
     {
-        var msg = arg as SocketUserMessage;
-        if (msg == null) return;
+        var message = arg as SocketUserMessage;
+        if (message == null) return;
 
-        bool authorIsBot = msg.Author.Id == _client.CurrentUser.Id || msg.Author.IsBot;
+        var authorIsBot = message.Author.Id == _client.CurrentUser.Id || message.Author.IsBot;
         if (authorIsBot) return;
 
-        int prefixPosition = 0;
+        var prefixPosition = 0;
 
-        if (msg.HasCharPrefix('!', ref prefixPosition))
+        if (message.HasCharPrefix('!', ref prefixPosition))
         {
-            var context = new SocketCommandContext(_client, msg);
-
-            Console.WriteLine($"Services count: ${_services}");
-            var result = await _commands.ExecuteAsync(context, prefixPosition, _services);
-
-            if (!result.IsSuccess && result.Error != CommandError.UnknownCommand)
-                await msg.Channel.SendMessageAsync(result.ErrorReason);
+            var context = new SocketCommandContext(_client, message);
+            if (message.Embeds.Any()) await message.DeleteAsync();
+            _commands.ExecuteAsync(context, prefixPosition, _services);
+            //
+            // if (result.Error is not null) Console.Write(result.Error);
+            // if (!result.IsSuccess && result.Error != CommandError.UnknownCommand)
+            //     await msg.Channel.SendMessageAsync(result.ErrorReason);
         }
     }
 }
