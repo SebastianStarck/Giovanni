@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using System.Runtime.Caching;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,6 +9,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Giovanni.Services;
 using Giovanni.Services.Spotify;
+using Microsoft.Extensions.Caching.Memory;
 
 class Program
 {
@@ -39,6 +41,7 @@ class Program
     private static IServiceProvider ConfigureServices()
     {
         var map = new ServiceCollection()
+            .AddSingleton<CacheService>()
             .AddSingleton<HttpService>()
             .AddSingleton<SpotifyService>();
 

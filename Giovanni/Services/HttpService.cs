@@ -3,25 +3,24 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace Giovanni.Services
 {
     public class HttpService
     {
-        public static readonly HttpClient Client = new HttpClient();
-        private readonly string _baseURL;
+        private static readonly CacheService CacheService = new();
+        private static readonly HttpClient Client = new(new HttpClientHandler(), false);
+        private readonly string _baseUrl;
         private string _token;
-        private Func<Task<string>> _getToken;
+        private readonly Func<Task<string>> _getToken;
 
         public HttpClient GetClient() => Client;
 
-        public HttpService()
-        {
-        }
 
         public HttpService(string baseUrl, Func<Task<string>> getToken)
         {
-            _baseURL = baseUrl;
+            _baseUrl = baseUrl;
             _getToken = getToken;
         }
 
@@ -52,11 +51,49 @@ namespace Giovanni.Services
                 }
             }
 
-            LogService.Log($"GET {_baseURL + route}");
-            var response = await Client.GetAsync(_baseURL + route);
+            var url = _baseUrl + route;
+            LogService.Log($"GET {url}");
 
-            Console.WriteLine(response.Headers);
-            return response;
+            return await CacheService.GetOrCreateAsync(url, () => Client.GetAsync(url));
+        }
+
+        public static async Task<HttpResponseMessage> GetStatic(string route,
+            Dictionary<string, string> parameters = null)
+        {
+            if (parameters is not null)
+            {
+                foreach ((string header, string value) in parameters)
+                {
+                    Client.DefaultRequestHeaders.Add(header, value);
+                }
+            }
+
+            var url = route;
+            LogService.Log($"GET {url}");
+
+            return await CacheService.GetOrCreateAsync(url, () => Client.GetAsync(url));
+        }
+
+        public static async Task<T> GetStatic<T>(string route,
+            Dictionary<string, string> parameters = null)
+        {
+            if (parameters is not null)
+            {
+                foreach ((var header, var value) in parameters)
+                {
+                    Client.DefaultRequestHeaders.Add(header, value);
+                }
+            }
+
+            var url = route;
+            LogService.Log($"GET {url}");
+
+            return await CacheService.GetOrCreateAsync(url, async () =>
+            {
+                var obj = await (await Client.GetAsync(url)).Content.ReadAsStringAsync();
+
+                return JsonConvert.DeserializeObject<T>(obj);
+            });
         }
     }
 }
