@@ -1,31 +1,38 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using System.Threading.Tasks;
-using Giovanni.Services;
-using Newtonsoft.Json;
+using Giovanni.Models.Spotify.DataSource;
+using Giovanni.Services.Spotify;
 
 namespace Giovanni.Models.Spotify
 {
     public class Playlist
     {
         //[JsonProperty("followers")] public Followers Followers;
-        [JsonProperty("id")] public string ID;
-        [JsonProperty("public")] public bool IsPublic;
-        [JsonProperty("collaborative")] public bool Collaborative;
-        [JsonProperty("owner")] public User Owner;
-        [JsonProperty("name")] public string Name;
-        [JsonProperty("description")] public string Description;
-        [JsonProperty("images")] public Image[] Images;
-        [JsonProperty("snapshot_id")] public string SnapshotID;
-        [JsonProperty("external_urls")] public ExternalURLs ExternalUrLs;
-        [JsonProperty("tracks")] public Paginated<PlaylistItem> PaginatedPlaylistItems;
+        private readonly SpotifyService _spotifyService;
+
+        public string ID;
+        private PlaylistDataSource _dataSource;
 
         private HashSet<Artist> _artists;
         private Dictionary<string, int> _genresCount;
 
-        public override string ToString() => $"List name: {Name} \n Tracks: {PaginatedPlaylistItems.Total}";
+        public string Name => _dataSource.Name;
+        public object Count => _dataSource.PaginatedPlaylistItems.Total;
+        public string Image => _dataSource.Images[0]?.URL;
+        public UserDataSource Owner => _dataSource.Owner;
+        public string Link => _dataSource.ExternalUrLs.Spotify;
+
+        public Playlist(SpotifyService spotifyService, PlaylistDataSource dataSource)
+        {
+            ID = dataSource.ID;
+            _spotifyService = spotifyService;
+            _dataSource = dataSource;
+        }
+
+        public override string ToString() =>
+            $"List name: {_dataSource.Name} \n Tracks: {_dataSource.PaginatedPlaylistItems.Total}";
 
         public async Task<Dictionary<string, int>> GetGenresCount() =>
             _genresCount ?? await CalculateGenresCount();
@@ -34,13 +41,9 @@ namespace Giovanni.Models.Spotify
         {
             _genresCount = new Dictionary<string, int>();
 
-            foreach (Artist artist in GetArtists())
+            foreach (var artist in GetArtists())
             {
-                using var response =
-                    await HttpService.Client.GetAsync($"https://api.spotify.com/v1/artists/{artist.ID}");
-
-                var fetchedArtist = JsonConvert.DeserializeObject<Artist>(await response.Content.ReadAsStringAsync());
-                foreach (string genre in fetchedArtist.GetGenres())
+                foreach (string genre in await artist.GetGenres())
                 {
                     _genresCount[genre] = _genresCount.GetValueOrDefault(genre) + 1;
                 }
@@ -50,19 +53,41 @@ namespace Giovanni.Models.Spotify
         }
 
         public HashSet<Artist> GetArtists() => _artists ?? CalculateArtists();
-        public HashSet<Artist> GetArtistsWith() => _artists ?? CalculateArtists();
 
         private HashSet<Artist> CalculateArtists()
         {
             _artists = new HashSet<Artist>();
 
-            foreach (PlaylistItem item in PaginatedPlaylistItems.Items)
-            foreach (Artist artist in item.Track.Artists)
-                _artists.Add(artist);
+            foreach (var item in _dataSource.PaginatedPlaylistItems.Items)
+            {
+                foreach (var artist in item.Track.Artists)
+                {
+                    _artists.Add(new Artist(_spotifyService, artist));
+                }
+            }
 
             _artists = _artists.OrderBy(artist => artist.ToString()).ToHashSet();
-            
+
             return _artists;
+        }
+
+        public string GetSongsOverview(int maxCharacters = 50)
+        {
+            var stringfiedSongs = "";
+            var stringfiedSongsCount = 0;
+
+            foreach (var item in _dataSource.PaginatedPlaylistItems.Items)
+            {
+                if (stringfiedSongs.Length + item.Track.Name.Length > maxCharacters) break;
+                if (stringfiedSongsCount > 0) stringfiedSongs += ", ";
+
+                stringfiedSongs += $"{item.Track.Name}";
+                stringfiedSongsCount++;
+            }
+
+            var remainingSongsCount = _dataSource.PaginatedPlaylistItems.Total - stringfiedSongsCount;
+
+            return $"{stringfiedSongs} {(remainingSongsCount > 0 ? $"and {remainingSongsCount} more..." : "")}";
         }
     }
 }
