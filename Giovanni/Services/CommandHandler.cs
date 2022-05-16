@@ -20,8 +20,10 @@ public class CommandHandler
 
     public async Task HandleCommandAsync(SocketMessage arg)
     {
-        var message = arg as SocketUserMessage;
-        if (message == null) return;
+        if (arg is not SocketUserMessage message)
+        {
+            return;
+        }
 
         var authorIsBot = message.Author.Id == _client.CurrentUser.Id || message.Author.IsBot;
         if (authorIsBot) return;
@@ -32,11 +34,17 @@ public class CommandHandler
         {
             var context = new SocketCommandContext(_client, message);
             if (message.Embeds.Any()) await message.DeleteAsync();
-            _commands.ExecuteAsync(context, prefixPosition, _services);
-            //
-            // if (result.Error is not null) Console.Write(result.Error);
-            // if (!result.IsSuccess && result.Error != CommandError.UnknownCommand)
-            //     await msg.Channel.SendMessageAsync(result.ErrorReason);
+
+            Console.WriteLine($"Executing {message.Content}");
+
+            try
+            {
+                await _commands.ExecuteAsync(context, prefixPosition, _services);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
         }
     }
 }

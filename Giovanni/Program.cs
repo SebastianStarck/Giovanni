@@ -9,7 +9,6 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Giovanni.Services;
 using Giovanni.Services.Spotify;
-using Microsoft.Extensions.Caching.Memory;
 
 class Program
 {
@@ -43,7 +42,8 @@ class Program
         var map = new ServiceCollection()
             .AddSingleton<CacheService>()
             .AddSingleton<HttpService>()
-            .AddSingleton<SpotifyService>();
+            .AddSingleton<SpotifyService>()
+            .AddSingleton<DatabaseService>();
 
         return map.BuildServiceProvider();
     }
