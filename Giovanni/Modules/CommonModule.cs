@@ -34,16 +34,6 @@ namespace Giovanni.Modules
         [RequireBotPermission(ChannelPermission.ManageMessages)]
         public async Task PurgeAsync(int amount, params string[] args)
         {
-            _databaseService.GetMany<Playlist>();
-            // var reader = (await _databaseService.RunQuery("SELECT * FROM playlists"));
-            //
-            // while (reader.Read())
-            // {
-            //     Console.WriteLine(reader.GetString(0));
-            //     Console.WriteLine(reader.GetString(1));
-            // }
-
-            return;
             if (!_isDeleting) _isDeleting = true;
             else return;
 
@@ -54,7 +44,6 @@ namespace Giovanni.Modules
                 .FlattenAsync()).OrderByDescending(message => message.Id).Where(message =>
             {
                 var passesPrefixRule = prefix.IsEmpty() || message.Content.HasPrefix(prefix);
-                Console.WriteLine($"{prefix}, {prefix.IsEmpty()}, ${message.Content.HasPrefix(prefix)}");
                 var passesBotRule = !botOnly || !message.Author.IsBot;
 
                 return passesBotRule && passesPrefixRule;
@@ -89,6 +78,40 @@ namespace Giovanni.Modules
                 await deleteMessage.ModifyAsync(properties =>
                     properties.Content = $":white_check_mark: Deleted {count} messages");
             else await deleteMessage.DeleteAsync();
+
+            _isDeleting = false;
+        }
+
+        [Command("purge-bulk")]
+        [Alias("clean-bulk")]
+        [Summary("Removes X messages at once from the current channel.")]
+        [RequireUserPermission(ChannelPermission.ManageMessages)]
+        [RequireBotPermission(ChannelPermission.ManageMessages)]
+        public async Task PurgeBulkAsync(int amount, params string[] args)
+        {
+            if (!_isDeleting) _isDeleting = true;
+            else return;
+
+            var (_, prefix, botOnly) = new PurgeAsyncParams(args);
+
+            var messages = (await Context.Channel
+                .GetMessagesAsync(Context.Message, Direction.Before)
+                .FlattenAsync()).OrderByDescending(message => message.Id).Where(message =>
+            {
+                var passesDateRule = message.CreatedAt > DateTimeOffset.Now.AddDays(-15);
+                var passesPrefixRule = prefix.IsEmpty() || message.Content.HasPrefix(prefix);
+                var passesBotRule = !botOnly || !message.Author.IsBot;
+
+                return passesBotRule && passesPrefixRule && passesDateRule;
+            });
+
+            if (!messages.Any()) return;
+
+            var channel = Context.Channel as ITextChannel;
+            var count = 0;
+
+            await channel.DeleteMessageAsync(Context.Message);
+            await channel.DeleteMessagesAsync(messages);
 
             _isDeleting = false;
         }
