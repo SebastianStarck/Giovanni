@@ -34,6 +34,9 @@ namespace Giovanni.Modules
         [RequireBotPermission(ChannelPermission.ManageMessages)]
         public async Task PurgeAsync(int amount, params string[] args)
         {
+
+            _databaseService.GetMany<Playlist>();
+            return;
             if (!_isDeleting) _isDeleting = true;
             else return;
 

@@ -11,11 +11,14 @@ using Giovanni.Services.Database;
 using Google.Protobuf.WellKnownTypes;
 using MySql.Data.MySqlClient;
 using static System.Int32;
+using Type = System.Type;
 
 namespace Giovanni.Services
 {
     public class DatabaseService
     {
+        private Dictionary<Type, Dictionary<string, CustomAttributeData>> _typeFields = new();
+
         public async Task<DbDataReader> RunQuery(string query)
         {
             var command = new MySqlCommand(query, DBConnection.Instance().Open());
@@ -37,29 +40,46 @@ namespace Giovanni.Services
 
             while (dataReader.Read())
             {
-                var entity = new T();
-                var columnsMetadata = tableType.GetFields()
-                    .ToDictionary(entry => entry.Name, entry => entry.CustomAttributes.First(
-                        attribute =>
-                            attribute.AttributeType == typeof(ColumnAttribute)));
-
-                foreach (var field in entity.GetType().GetFields())
-                {
-                    columnsMetadata.TryGetValue(field.Name, out var fieldMeta);
-                    var (name, index, type) = fieldMeta.ConstructorArguments
-                        .Select(attribute => attribute.Value);
-                    var position = dataReader.GetOrdinal((string) name);
-
-                    TrySetProperty(entity, field.Name, dataReader.GetValue(position));
-                }
-
-                entities.Add(entity);
+                entities.Add(dataReader.InstantiateCurrent<T>());
             }
 
             foreach (var entity in entities)
             {
                 Console.WriteLine(entity);
             }
+        }
+
+        private T InstantiateClassFromDataReader<T>(DbDataReader dataReader, Type tableType) where T : new()
+        {
+            var entity = new T();
+            var columnsMetadata = GetColumnsMetadata(tableType);
+
+            foreach (var field in entity.GetType().GetFields())
+            {
+                columnsMetadata.TryGetValue(field.Name, out var fieldMeta);
+                var (name, index, type) = fieldMeta.ConstructorArguments
+                    .Select(attribute => attribute.Value);
+                var position = dataReader.GetOrdinal((string) name);
+
+                TrySetProperty(entity, field.Name, dataReader.GetValue(position));
+            }
+
+            return entity;
+        }
+
+        private Dictionary<string, CustomAttributeData> GetColumnsMetadata(Type tableType)
+        {
+            if (!_typeFields.TryGetValue(tableType, out var fields))
+            {
+                fields = tableType.GetFields()
+                    .ToDictionary(entry => entry.Name, entry => entry.CustomAttributes.First(
+                        attribute =>
+                            attribute.AttributeType == typeof(ColumnAttribute)));
+
+                _typeFields.Add(tableType, fields);
+            }
+
+            return fields;
         }
 
         private void TrySetProperty(object obj, string property, object value)
