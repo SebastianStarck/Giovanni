@@ -52,16 +52,10 @@ class Program
     {
         await InitCommands();
 
-        await _client.LoginAsync(TokenType.Bot, "KEY GOES HERE");
+        await _client.LoginAsync(TokenType.Bot, "OTUzODQzMTg4MDQ3Njc5NTU5.YjKdsQ.dr1yBoTQwoXiZp3BMQO9p9F2eCw");
         // Environment.GetEnvironmentVariable("DiscordToken"));
         await _client.StartAsync();
-
-        // var spotifyService = _services.GetService<SpotifyService>();
-        // await spotifyService.GetToken();
-        // Get mudvayne
-        // await spotifyService.GetPlaylistTracks("3cEYpjA9oz9GiPac4AsH4n");
-        // await spotifyService.GetArtistByID("2Pfv2w8a20xzC7Dr7QXRqM");
-
+        
         await Task.Delay(Timeout.Infinite);
     }
 
@@ -69,5 +63,6 @@ class Program
     {
         await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
         _client.MessageReceived += _commandHandler.HandleCommandAsync;
+        _client.ButtonExecuted += _commandHandler.HandleButtonAsync;
     }
 }

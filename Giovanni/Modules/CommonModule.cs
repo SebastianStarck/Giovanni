@@ -34,9 +34,6 @@ namespace Giovanni.Modules
         [RequireBotPermission(ChannelPermission.ManageMessages)]
         public async Task PurgeAsync(int amount, params string[] args)
         {
-
-            _databaseService.GetMany<Playlist>();
-            return;
             if (!_isDeleting) _isDeleting = true;
             else return;
 
@@ -111,11 +108,14 @@ namespace Giovanni.Modules
             if (!messages.Any()) return;
 
             var channel = Context.Channel as ITextChannel;
-            var count = 0;
 
-            await channel.DeleteMessageAsync(Context.Message);
+            var deleteMessage = await channel.SendMessageAsync(":gear: Deleting messages...");
+
+            messages = messages.Append(Context.Message);
             await channel.DeleteMessagesAsync(messages);
 
+            deleteMessage.ModifyAsync(properties =>
+                properties.Content = $":white_check_mark: Deleted {messages.Count() - 1} messages");
             _isDeleting = false;
         }
     }

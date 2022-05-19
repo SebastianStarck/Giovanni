@@ -20,7 +20,7 @@ namespace Giovanni.Modules
         //     await ReplyAsync(SpotifyService.GetAuthorizeUserLink());
         // }
 
-        [Command("contar")]
+        [Command("parse-playlist")]
         public async Task ParsePlaylist(string url)
         {
             var listID = Util.GetIDFromURL(url);
@@ -37,6 +37,7 @@ namespace Giovanni.Modules
             var sortedGenres = genres.OrderByDescending(x => x.Value);
 
             var owner = list.Owner;
+            var builder = new ComponentBuilder().WithButton("I'm a button, click me!", "test-button");
             var embed = new EmbedBuilder()
                 .AddField("Songs", list.GetSongsOverview())
                 .AddField("Owner", $"[{owner.Name}]({owner.ExternalUrLs.Spotify})", true)
@@ -48,8 +49,8 @@ namespace Giovanni.Modules
                 .WithUrl(list.Link)
                 .WithCurrentTimestamp();
 
-            //Your embed needs to be built before it is able to be sent
-            await ReplyAsync(embed: embed.Build());
+            await ReplyAsync(embed: embed.Build(), components: builder.Build());
+            await Context.Message.DeleteAsync();
         }
     }
 }
