@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 using System.Reflection;
+using Discord;
 using Giovanni.Services.Database;
 
 namespace Giovanni.Common
@@ -83,6 +84,13 @@ namespace Giovanni.Common
             var field = obj.GetType().GetField(fieldName);
 
             if (field != null) field.SetValue(obj, value);
+        }
+
+        public static EmbedBuilder AddEmptyField(this EmbedBuilder builder)
+        {
+            builder.AddField("\u200B", "\u200B", true);
+
+            return builder;
         }
     }
 }
