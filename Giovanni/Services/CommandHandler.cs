@@ -3,7 +3,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using Discord.Interactions;
 using Discord.WebSocket;
+using Giovanni.Common;
 
 public class CommandHandler
 {
@@ -20,31 +22,73 @@ public class CommandHandler
 
     public async Task HandleCommandAsync(SocketMessage arg)
     {
-        if (arg is not SocketUserMessage message)
-        {
-            return;
-        }
+        if (arg is not SocketUserMessage message) return;
 
         var authorIsBot = message.Author.Id == _client.CurrentUser.Id || message.Author.IsBot;
         if (authorIsBot) return;
 
         var prefixPosition = 0;
+        if (!message.HasCharPrefix('!', ref prefixPosition)) return;
 
-        if (message.HasCharPrefix('!', ref prefixPosition))
+        try
         {
             var context = new SocketCommandContext(_client, message);
+            if (message.Content.Contains("comandos"))
+            {
+                ExplainCommands(context);
+
+                return;
+            }
+
             if (message.Embeds.Any()) await message.DeleteAsync();
 
             Console.WriteLine($"Executing {message.Content}");
 
-            try
+            await _commands.ExecuteAsync(context, prefixPosition, _services);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
+    }
+
+    private void ExplainCommands(SocketCommandContext context)
+    {
+        var embed = new EmbedBuilder().WithColor(Color.Purple);
+        var commands = _commands.Commands.OrderBy(command => command.Name);
+
+        foreach (var command in commands)
+        {
+            embed.AddField(command.Name, command.Summary ?? "???");
+
+            if (command.Parameters.Any())
             {
-                await _commands.ExecuteAsync(context, prefixPosition, _services);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
+                var strigifiedParams = command.Parameters.Aggregate("",
+                    (result, current) => $"{result}\n{current.Name}: {current.Type.Name}");
+                embed.AddField("Params",
+                    $"```yml\n{strigifiedParams}```");
             }
         }
+
+        context.Channel.SendMessageAsync(embed: embed.Build());
+    }
+
+    public async Task HandleButtonAsync(SocketMessageComponent arg)
+    {
+        // Console.WriteLine(arg.Data.CustomId);
+
+        foreach (var command in this._commands.Commands)
+        {
+            Console.WriteLine(command.Name);
+            Console.WriteLine(command.Summary);
+            Console.WriteLine(command.Parameters);
+            Console.WriteLine(
+                string.Join(", ",
+                    command.Parameters.Select(command => command.Name)));
+        }
+
+        await arg.RespondAsync($"Button clicked by {arg.User.Username}");
+
+        return;
     }
 }
