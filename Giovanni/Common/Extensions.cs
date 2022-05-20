@@ -4,6 +4,7 @@ using System.Data.Common;
 using System.Linq;
 using System.Reflection;
 using Discord;
+using Discord.Commands;
 using Giovanni.Services.Database;
 
 namespace Giovanni.Common
@@ -91,6 +92,13 @@ namespace Giovanni.Common
             builder.AddField("\u200B", "\u200B", true);
 
             return builder;
+        }
+
+        public static string GetDescription(this CommandInfo command)
+        {
+            
+
+            return "Im a description, yey!";
         }
     }
 }

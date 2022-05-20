@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
@@ -25,6 +26,7 @@ namespace Giovanni.Modules
 
         [Command("ping")]
         [Summary("Pong!")]
+        [Description("I'm a description, yey!")]
         public Task SayAsync() => ReplyAsync("!Pong");
 
         [Command("purge")]

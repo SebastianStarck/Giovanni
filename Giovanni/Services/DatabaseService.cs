@@ -19,15 +19,14 @@ namespace Giovanni.Services
     {
         private Dictionary<Type, Dictionary<string, CustomAttributeData>> _typeFields = new();
 
-        public async Task<DbDataReader> RunQuery(string query)
+        public Task<DbDataReader> RunQuery(string query)
         {
             var command = new MySqlCommand(query, DBConnection.Instance().Open());
 
-
-            return command.ExecuteReader();
+            return Task.FromResult<DbDataReader>(command.ExecuteReader());
         }
 
-        public async Task GetMany<T>() where T : new()
+        public async Task<List<T>> GetMany<T>() where T : new()
         {
             var tableType = typeof(T);
             var tableName =
@@ -43,10 +42,12 @@ namespace Giovanni.Services
                 entities.Add(dataReader.InstantiateCurrent<T>());
             }
 
-            foreach (var entity in entities)
+            foreach (T entity in entities)
             {
                 Console.WriteLine(entity);
             }
+
+            return entities;
         }
 
         private T InstantiateClassFromDataReader<T>(DbDataReader dataReader, Type tableType) where T : new()

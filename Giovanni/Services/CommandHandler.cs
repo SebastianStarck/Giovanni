@@ -33,23 +33,53 @@ public class CommandHandler
         try
         {
             var context = new SocketCommandContext(_client, message);
-            if (message.Content.Contains("comandos"))
+            string messageContent = message.Content;
+
+            if (messageContent.Contains("comandos"))
             {
                 ExplainCommands(context);
 
                 return;
             }
 
+            if (messageContent.Contains("help"))
+            {
+                var (_, commandName) = messageContent.Split(" ");
+                ExplainCommand(commandName, context);
+
+                return;
+            }
+
             if (message.Embeds.Any()) await message.DeleteAsync();
 
-            Console.WriteLine($"Executing {message.Content}");
+            Console.WriteLine($"Executing {messageContent}");
 
-            await _commands.ExecuteAsync(context, prefixPosition, _services);
+            _commands.ExecuteAsync(context, prefixPosition, _services);
         }
         catch (Exception e)
         {
             Console.WriteLine(e);
         }
+    }
+
+    private void ExplainCommand(string commandName, SocketCommandContext context)
+    {
+        var command = _commands.Commands.FirstOrDefault(command => command.Name == commandName);
+
+        if (command is null) context.Channel.SendMessageAsync("No encontre el comando buscado :(");
+
+        var embed = new EmbedBuilder().WithColor(Color.Purple).AddField(command.Name, command.Summary ?? "???")
+            .WithDescription(command.GetDescription());
+
+        if ((bool) command.Parameters?.Any())
+        {
+            var strigifiedParams = command.Parameters.Aggregate("",
+                (result, current) => $"{result}\n{current.Name}: {current.Type.Name}");
+            embed.AddField("Params",
+                $"```yml\n{strigifiedParams}```");
+        }
+
+        context.Channel.SendMessageAsync(embed: embed.Build());
     }
 
     private void ExplainCommands(SocketCommandContext context)
