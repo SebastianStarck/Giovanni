@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Data.Common;
 using System.Linq;
 using System.Reflection;
@@ -96,9 +97,12 @@ namespace Giovanni.Common
 
         public static string GetDescription(this CommandInfo command)
         {
-            
+            var attribute =
+                command.Attributes.FirstOrDefault(attribute => attribute is DescriptionAttribute) as
+                    DescriptionAttribute;
 
-            return "Im a description, yey!";
+
+            return attribute?.Description ?? "";
         }
     }
 }

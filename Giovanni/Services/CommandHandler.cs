@@ -6,6 +6,7 @@ using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Giovanni.Common;
+using Giovanni.Modules;
 
 public class CommandHandler
 {
@@ -70,6 +71,17 @@ public class CommandHandler
 
         var embed = new EmbedBuilder().WithColor(Color.Purple).AddField(command.Name, command.Summary ?? "???")
             .WithDescription(command.GetDescription());
+        var moduleSummary = command.Module.Summary;
+        var embed = new EmbedBuilder().WithColor(Color.Purple)
+            .WithTitle($"Command: {command.Name}")
+            .WithDescription(command.GetDescription())
+            .WithImageUrl("https://upload.wikimedia.org/wikipedia/commons/9/92/Cog_font_awesome.svg");
+
+
+        if (moduleSummary is not null)
+        {
+            embed.AddField("Category", moduleSummary);
+        }
 
         if ((bool) command.Parameters?.Any())
         {
@@ -77,6 +89,10 @@ public class CommandHandler
                 (result, current) => $"{result}\n{current.Name}: {current.Type.Name}");
             embed.AddField("Params",
                 $"```yml\n{strigifiedParams}```");
+        }
+        else
+        {
+            embed.AddField("Params", "None");
         }
 
         context.Channel.SendMessageAsync(embed: embed.Build());

@@ -13,6 +13,7 @@ namespace Giovanni.Modules
 {
     using Discord.Commands;
 
+    [Name("Utility")]
     public class CommonModule : ModuleBase<SocketCommandContext>
     {
         private DatabaseService _databaseService;
@@ -26,7 +27,7 @@ namespace Giovanni.Modules
 
         [Command("ping")]
         [Summary("Pong!")]
-        [Description("I'm a description, yey!")]
+        [Description("Ping pong!")]
         public Task SayAsync() => ReplyAsync("!Pong");
 
         [Command("purge")]

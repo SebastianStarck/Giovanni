@@ -10,6 +10,7 @@ namespace Giovanni.Modules
 {
     using Discord.Commands;
 
+    [Name("Spotify")]
     public class SpotifyModule : ModuleBase<SocketCommandContext>
     {
         public SpotifyService SpotifyService { get; set; }
@@ -20,6 +21,7 @@ namespace Giovanni.Modules
         //     await ReplyAsync(SpotifyService.GetAuthorizeUserLink());
         // }
 
+        [Name("Parse Spotify Playlist")]
         [Command("parse-playlist")]
         public async Task ParsePlaylist(string url)
         {
