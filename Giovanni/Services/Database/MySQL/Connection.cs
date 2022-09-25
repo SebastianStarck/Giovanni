@@ -1,8 +1,6 @@
-﻿using System;
-using MySql.Data;
-using MySql.Data.MySqlClient;
+﻿using MySql.Data.MySqlClient;
 
-namespace Giovanni.Services.Database
+namespace Giovanni.Services.Database.MySQL
 {
     public class DBConnection
     {

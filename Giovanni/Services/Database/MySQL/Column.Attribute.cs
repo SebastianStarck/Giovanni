@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Giovanni.Services.Database
+namespace Giovanni.Services.Database.MySQL
 {
     [AttributeUsage(AttributeTargets.All)]
     public class ColumnAttribute : Attribute

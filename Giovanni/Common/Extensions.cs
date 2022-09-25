@@ -4,9 +4,11 @@ using System.ComponentModel;
 using System.Data.Common;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using Discord;
 using Discord.Commands;
 using Giovanni.Services.Database;
+using Giovanni.Services.Database.MySQL;
 
 namespace Giovanni.Common
 {
@@ -72,7 +74,7 @@ namespace Giovanni.Common
                 fields.TryGetValue(field.Name, out var fieldMeta);
                 var (name, index, _) = fieldMeta.ConstructorArguments
                     .Select(attribute => attribute.Value);
-                var position = dataReader.GetOrdinal((string) name);
+                var position = dataReader.GetOrdinal((string)name);
 
 
                 entity.TrySetField(field.Name, dataReader.GetValue(position));
@@ -103,6 +105,40 @@ namespace Giovanni.Common
 
 
             return attribute?.Description ?? "";
+        }
+
+        public static string JoinToString<T>(
+            this IEnumerable<T> enumerable, string glue = ",", string wrapper = ""
+        )
+        {
+            var decoratedValues = enumerable.Select(value => $"{wrapper}{value}{wrapper}");
+            return string.Join(glue, decoratedValues);
+        }
+
+        public static string ToSnakeCase(this string text)
+        {
+            if (text == null) throw new ArgumentNullException(nameof(text));
+
+            if (text.Length < 2) return text;
+
+            var builder = new StringBuilder();
+            builder.Append(char.ToLowerInvariant(text[0]));
+            
+            for (int i = 1; i < text.Length; ++i)
+            {
+                char c = text[i];
+                if (char.IsUpper(c))
+                {
+                    builder.Append('_');
+                    builder.Append(char.ToLowerInvariant(c));
+                }
+                else
+                {
+                    builder.Append(c);
+                }
+            }
+
+            return builder.ToString();
         }
     }
 }
