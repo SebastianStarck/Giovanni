@@ -29,11 +29,9 @@ class Program
         _client = new DiscordSocketClient(new DiscordSocketConfig
         {
             LogLevel = LogSeverity.Info,
-            //MessageCacheSize = 50,
-            //WebSocketProvider = WS4NetProvider.Instance
         });
 
-        _commands = new CommandService(new CommandServiceConfig {LogLevel = LogSeverity.Info});
+        _commands = new CommandService(new CommandServiceConfig { LogLevel = LogSeverity.Info });
         _services = ConfigureServices();
         _commandHandler = new CommandHandler(_client, _commands, _services);
 
@@ -57,9 +55,9 @@ class Program
     {
         await InitCommands();
 
-        await _client.LoginAsync(TokenType.Bot, Environment.GetEnvironmentVariable("DiscordToken")));        
+        await _client.LoginAsync(TokenType.Bot, Environment.GetEnvironmentVariable("DiscordToken"));
         await _client.StartAsync();
-        
+
         await Task.Delay(Timeout.Infinite);
     }
 
