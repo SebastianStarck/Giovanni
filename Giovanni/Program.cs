@@ -57,8 +57,7 @@ class Program
     {
         await InitCommands();
 
-        await _client.LoginAsync(TokenType.Bot, "OTUzODQzMTg4MDQ3Njc5NTU5.YjKdsQ.dr1yBoTQwoXiZp3BMQO9p9F2eCw");
-        // Environment.GetEnvironmentVariable("DiscordToken"));
+        await _client.LoginAsync(TokenType.Bot, Environment.GetEnvironmentVariable("DiscordToken")));        
         await _client.StartAsync();
         
         await Task.Delay(Timeout.Infinite);
