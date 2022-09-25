@@ -1,44 +1,62 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Data.Common;
-using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 using Giovanni.Common;
-using Giovanni.Services.Database;
 using Giovanni.Services.Database.MySQL;
-using Google.Protobuf.WellKnownTypes;
 using MySql.Data.MySqlClient;
-using static System.Int32;
-using Type = System.Type;
 
 namespace Giovanni.Services
 {
     public class DatabaseService
     {
-        public Task<DbDataReader> RunQuery(string query)
+        public async Task<Tuple<DbDataReader, MySqlCommand>> RunQuery(string query, bool isInsert = false)
         {
-            var command = new MySqlCommand(query, DBConnection.Instance().Open());
+            var connection = DBConnection.Instance().Open();
+            var command = new MySqlCommand(query, connection);
+            var result = await command.ExecuteReaderAsync();
 
-            return Task.FromResult<DbDataReader>(command.ExecuteReader());
+            return new Tuple<DbDataReader, MySqlCommand>(result, command);
         }
 
         // public async Task<T> InsertOne<T>(T entity) where T : new()
-        public void InsertOne<T>(T entity)
+        public async Task<T> InsertOne<T>(T entity) where T : new()
         {
-            var parsedEntity = Helper.EntityToSQL(entity);
-            Console.WriteLine(parsedEntity.ToInsertQuery());
+            var decoratedEntity = SQLHelper.DecorateEntity(entity);
+
+            try
+            {
+                var (dataReader, command) = await RunQuery(decoratedEntity.ToInsertQuery());
+                var entityID = command.LastInsertedId;
+
+                command.Connection.Close();
+                return await GetOne<T>((int)entityID);
+            }
+            catch (Exception e)
+            {
+                // TODO: Log into LogService
+                Console.WriteLine(e);
+            }
+
+            return default;
+        }
+
+        public async Task<T> GetOne<T>(int id) where T : new()
+        {
+            var tableName = SQLHelper.GetTableName(typeof(T));
+            var (dataReader, _) = await RunQuery($"SELECT * FROM {tableName} WHERE id = {id}");
+            dataReader.Read();
+
+            return SQLHelper.InstantiateEntity<T>(dataReader);
         }
 
         public async Task<List<T>> GetMany<T>() where T : new()
         {
-            var tableName = Helper.GetTableName(typeof(T));
-            var dataReader = await RunQuery($"SELECT * FROM {tableName}");
+            var tableName = SQLHelper.GetTableName(typeof(T));
+            var (dataReader, _) = await RunQuery($"SELECT * FROM {tableName}");
             var entities = new List<T>();
 
-            while (dataReader.Read()) entities.Add(dataReader.InstantiateCurrent<T>());
+            while (dataReader.Read()) entities.Add(SQLHelper.InstantiateEntity<T>(dataReader));
 
             return entities;
         }

@@ -54,42 +54,6 @@ namespace Giovanni.Common
             return array.ToDictionary(getName);
         }
 
-        public static T InstantiateCurrent<T>(this DbDataReader dataReader) where T : new()
-        {
-            var type = typeof(T);
-            var entity = new T();
-
-            if (!_typeFields.TryGetValue(type, out var fields))
-            {
-                fields = type.GetFields()
-                    .ToDictionary(entry => entry.Name, entry => entry.CustomAttributes.First(
-                        attribute =>
-                            attribute.AttributeType == typeof(ColumnAttribute)));
-
-                _typeFields.Add(type, fields);
-            }
-
-            foreach (var field in entity.GetType().GetFields())
-            {
-                fields.TryGetValue(field.Name, out var fieldMeta);
-                var (name, index, _) = fieldMeta.ConstructorArguments
-                    .Select(attribute => attribute.Value);
-                var position = dataReader.GetOrdinal((string)name);
-
-
-                entity.TrySetField(field.Name, dataReader.GetValue(position));
-            }
-
-            return entity;
-        }
-
-        private static void TrySetField(this object obj, string fieldName, object value)
-        {
-            var field = obj.GetType().GetField(fieldName);
-
-            if (field != null) field.SetValue(obj, value);
-        }
-
         public static EmbedBuilder AddEmptyField(this EmbedBuilder builder)
         {
             builder.AddField("\u200B", "\u200B", true);
@@ -99,10 +63,8 @@ namespace Giovanni.Common
 
         public static string GetDescription(this CommandInfo command)
         {
-            var attribute =
-                command.Attributes.FirstOrDefault(attribute => attribute is DescriptionAttribute) as
-                    DescriptionAttribute;
-
+            var attribute = command.Attributes.FirstOrDefault(attribute => attribute is DescriptionAttribute) as
+                DescriptionAttribute;
 
             return attribute?.Description ?? "";
         }
@@ -115,6 +77,7 @@ namespace Giovanni.Common
             return string.Join(glue, decoratedValues);
         }
 
+        // TODO: Implement own wrote code instead of this
         public static string ToSnakeCase(this string text)
         {
             if (text == null) throw new ArgumentNullException(nameof(text));
@@ -123,7 +86,7 @@ namespace Giovanni.Common
 
             var builder = new StringBuilder();
             builder.Append(char.ToLowerInvariant(text[0]));
-            
+
             for (int i = 1; i < text.Length; ++i)
             {
                 char c = text[i];

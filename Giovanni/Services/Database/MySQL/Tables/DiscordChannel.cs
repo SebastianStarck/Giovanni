@@ -2,13 +2,16 @@
 {
     public class DiscordChannel
     {
-        [Column("id", 0, typeof(string))] public string ID;
-        [Column("name", 1, typeof(string))] public string Name;
-        
-        public DiscordChannel(string id, string name)
+        [Column(0, typeof(int), columnName: "id", isPivot: true)]
+        public int ID;
+
+        [Column(0, typeof(string), columnName: "discord_id", isPivot: true)]
+        public string DiscordID;
+
+        [Column(1, typeof(string))] public string Name;
+
+        public DiscordChannel()
         {
-            ID = id;
-            Name = name;
         }
 
         public override string ToString() => $"Channel; ID: {ID}, Name: {Name}";
