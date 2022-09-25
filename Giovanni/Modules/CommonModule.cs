@@ -7,7 +7,6 @@ using Discord.WebSocket;
 using Giovanni.Common;
 using Giovanni.Modules.Spotify;
 using Giovanni.Services;
-using Giovanni.Services.Database.Tables;
 
 namespace Giovanni.Modules
 {
@@ -17,13 +16,23 @@ namespace Giovanni.Modules
     public class CommonModule : ModuleBase<SocketCommandContext>
     {
         private DatabaseService _databaseService;
+        private UsersService _usersService;
 
-        public CommonModule(DatabaseService databaseService)
+        public CommonModule(DatabaseService databaseService, UsersService usersService)
         {
             _databaseService = databaseService;
+            _usersService = usersService;
         }
 
         private bool _isDeleting = false;
+
+        [Command("users")]
+        public async Task ReturnUsers()
+        {
+            var users = await _usersService.GetAsync();
+
+            Context.Channel.SendMessageAsync(users.Aggregate("", (result, user) => $"{result}, {user.Name}"));
+        }
 
         [Command("ping")]
         [Summary("Pong!")]

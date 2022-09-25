@@ -69,8 +69,6 @@ public class CommandHandler
 
         if (command is null) context.Channel.SendMessageAsync("No encontre el comando buscado :(");
 
-        var embed = new EmbedBuilder().WithColor(Color.Purple).AddField(command.Name, command.Summary ?? "???")
-            .WithDescription(command.GetDescription());
         var moduleSummary = command.Module.Summary;
         var embed = new EmbedBuilder().WithColor(Color.Purple)
             .WithTitle($"Command: {command.Name}")

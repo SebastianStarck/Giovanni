@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Diagnostics;
+using System.IO;
 using System.Reflection;
 using System.Runtime.Caching;
 using System.Threading;
@@ -7,7 +9,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using Giovanni.Common;
 using Giovanni.Services;
+using Giovanni.Services.Database.MySQL.Tables;
 using Giovanni.Services.Spotify;
 
 class Program
@@ -42,8 +46,9 @@ class Program
         var map = new ServiceCollection()
             .AddSingleton<CacheService>()
             .AddSingleton<HttpService>()
+            .AddSingleton<DatabaseService>()
             .AddSingleton<SpotifyService>()
-            .AddSingleton<DatabaseService>();
+            .AddSingleton<UsersService>();
 
         return map.BuildServiceProvider();
     }
